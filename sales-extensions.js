@@ -48,6 +48,7 @@ selectFacility=function(i){
  $('dGeoLat').value=r.latitude??'';
  $('dGeoLon').value=r.longitude??'';
  $('dGeoVerified').checked=!!r.locationVerified;
+ $('coordinateSuggestions').replaceChildren();
  updateScoreCard(i);
 };
 $('saveDetail').addEventListener('click',()=>{
@@ -203,7 +204,7 @@ async function cloudInit(){
  if(anon.startsWith('sb_secret_')){cloudState('Secret keys must never be entered in a browser. Use the publishable key.');return false}
  if(!window.supabase){
   cloudState('Loading Supabase authentication library…');
-  await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';sc.onload=resolve;sc.onerror=()=>reject(Error('Unable to load the authentication library'));document.head.appendChild(sc)});
+  await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';sc.onload=resolve;sc.onerror=()=>reject(Error('Unable to load the authentication library'));document.head.appendChild(sc)});
  }
  cloud=window.supabase.createClient(url,anon,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  try{localStorage.setItem(configKey,JSON.stringify({url,anon}))}catch(e){}
