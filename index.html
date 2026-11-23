@@ -27,18 +27,25 @@ const odotSVG='http://www.w3.org/2000/svg';
 function svgNode(tag,attrs){const el=document.createElementNS(odotSVG,tag);for(const k of Object.keys(attrs||{}))el.setAttribute(k,String(attrs[k]));return el;}
 function projectedPoint(pt){return [(pt[0]+85)*600+83,27710-683*pt[1]];}
 function odotPath(points){let d='',last=null;for(const point of points){if(!Array.isArray(point)||point.length<2)continue;const xy=projectedPoint(point);if(!xy.every(Number.isFinite))continue;if(last&&Math.hypot(xy[0]-last[0],xy[1]-last[1])<.45)continue;d+=(d?'L':'M')+xy[0].toFixed(1)+' '+xy[1].toFixed(1)+' ';last=xy;}return d;}
-async function fetchODOTPage(kind,offset,serviceUrl){
-const variants=odotRoutes[kind].flatMap(n=>[String(n),String(n).padStart(3,'0'),String(n).padStart(4,'0'),String(n).padStart(5,'0')]);
-const values=[...new Set(variants)].map(x=>"'"+x+"'").join(',');
-const params=new URLSearchParams({where:"JURISDICTION_CD = 'S' AND ROUTE_TYPE = '"+kind+"' AND ROUTE_NBR IN ("+values+")",geometry:'-85.16,38.94,-83.55,40.45',geometryType:'esriGeometryEnvelope',inSR:'4326',spatialRel:'esriSpatialRelIntersects',outFields:'ROUTE_TYPE,ROUTE_NBR',returnGeometry:'true',outSR:'4326',f:'geojson',resultOffset:String(offset),resultRecordCount:'2000'});
-const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),28000);
-try{
- const resp=await fetch(serviceUrl+'?'+params.toString(),{signal:controller.signal,mode:'cors'});
- if(!resp.ok)throw new Error('ODOT HTTP '+resp.status);
- const data=await resp.json();
- if(data.error||!Array.isArray(data.features))throw new Error(data.error?.message||'ODOT returned no features array');
- return data;
-}finally{clearTimeout(timer);}
+async function fetchODOTPage(kind,number,offset,serviceUrl){
+ const variants=[String(number),String(number).padStart(3,'0'),String(number).padStart(4,'0'),String(number).padStart(5,'0')];
+ const values=[...new Set(variants)].map(v=>"'"+v+"'").join(',');
+ // Do not restrict jurisdiction: signed routes may include municipal or shared segments.
+ const params=new URLSearchParams({
+ where:"ROUTE_TYPE = '"+kind+"' AND ROUTE_NBR IN ("+values+")",
+ geometry:'-85.16,38.94,-83.55,40.45',geometryType:'esriGeometryEnvelope',
+ inSR:'4326',spatialRel:'esriSpatialRelIntersects',
+ outFields:'ROUTE_TYPE,ROUTE_NBR,OBJECTID',returnGeometry:'true',
+ outSR:'4326',f:'geojson',resultOffset:String(offset),resultRecordCount:'1000',orderByFields:'OBJECTID ASC'
+ });
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);
+ try{
+   const response=await fetch(serviceUrl+'?'+params.toString(),{signal:controller.signal,mode:'cors'});
+   if(!response.ok)throw new Error('ODOT HTTP '+response.status);
+   const data=await response.json();
+   if(data.error||!Array.isArray(data.features))throw new Error(data.error?.message||'No feature collection returned');
+   return data;
+ }finally{clearTimeout(timer)}
 }
 function drawODOT(features,kind){
 const target=el(kind==='IR'?'odotInterstates':'odotStateRoutes');
@@ -65,25 +72,56 @@ group.appendChild(svgNode('rect',{x:-24,y:-10,width:48,height:20,rx:5}));
 const t=svgNode('text',{y:1});t.textContent=name;group.appendChild(t);target.appendChild(group);}
 return count;
 }
-async function loadODOTType(kind){
-let lastErr;
-for(const service of odotServiceUrls){try{
- let all=[];
- for(let offset=0,page=0;page<12;page++,offset+=2000){
- const data=await fetchODOTPage(kind,offset,service);
- all.push(...data.features);
- if(data.features.length<2000&&!data.properties?.exceededTransferLimit)break;
+async function fetchCompleteRoute(kind,number){
+ let error;
+ for(const endpoint of odotServiceUrls){
+ try{
+   const all=[];
+   const seen=new Set();
+   for(let offset=0,page=0;page<80;page++,offset+=1000){
+     const result=await fetchODOTPage(kind,number,offset,endpoint);
+     let fresh=0;
+     for(const f of result.features){
+       const id=f.id??f.properties?.OBJECTID;
+       const key=id===undefined?JSON.stringify(f.geometry?.coordinates?.[0]||f.geometry?.coordinates||f):String(id);
+       if(seen.has(key))continue;
+       seen.add(key);all.push(f);fresh++;
+     }
+     if(result.features.length<1000 && !result.exceededTransferLimit && !result.properties?.exceededTransferLimit)break;
+     if(fresh===0)break;
+     if(page===79)throw new Error('ODOT page safety limit reached for '+kind+' '+number);
+   }
+   if(all.length===0)throw new Error('No segments found for '+kind+' '+number);
+   return all;
+ }catch(e){error=e}
  }
- const count=drawODOT(all,kind);
- if(!count)throw new Error('No matching road segments returned');
- return count;
-}catch(e){lastErr=e;}}
-throw lastErr||new Error('ODOT unavailable');
+ throw error||new Error('ODOT route unavailable');
+}
+async function loadODOTType(kind){
+ const successes=[],missing=[];
+ // Separate per-route requests prevent large combined queries from cutting off roads.
+ // Fetch in small groups to avoid overwhelming the source GIS server.
+ for(let i=0;i<odotRoutes[kind].length;i+=3){
+   const batch=odotRoutes[kind].slice(i,i+3);
+   const settled=await Promise.allSettled(batch.map(n=>fetchCompleteRoute(kind,n)));
+   for(let j=0;j<settled.length;j++){
+     if(settled[j].status==='fulfilled')successes.push(...settled[j].value);
+     else missing.push(batch[j]);
+   }
+ }
+ const segments=drawODOT(successes,kind);
+ return {segments,missing,loaded:odotRoutes[kind].length-missing.length};
 }
 Promise.allSettled([loadODOTType('IR'),loadODOTType('SR')]).then(results=>{
- const ok=results.filter(r=>r.status==='fulfilled');
- if(ok.length===2){el('roadStatus').textContent='ODOT road geometry loaded ('+results.map(r=>r.value).join(' / ')+' segments).';}
- else if(ok.length){el('roadStatus').textContent='ODOT partially loaded: '+ok.length+' of 2 road layers. Reload to retry.';}
- else{el('roadStatus').textContent='ODOT road service unavailable; road lines hidden rather than showing inaccurate routes. Reload to retry.';}
+ const report=[];
+ for(let i=0;i<results.length;i++){
+   const kind=i===0?'Interstates':'State routes',res=results[i];
+   if(res.status==='fulfilled'){
+     let message=kind+': '+res.value.loaded+'/'+odotRoutes[i===0?'IR':'SR'].length+' routes, '+res.value.segments+' segments';
+     if(res.value.missing.length)message+=' (missing '+res.value.missing.join(', ')+')';
+     report.push(message);
+   }else report.push(kind+': unable to load');
+ }
+ el('roadStatus').textContent='ODOT road data — '+report.join(' · ')+'. Some legitimate route overlaps or dataset gaps may remain.';
 });
 function filter(){const t=el('territory').value,q=el('search').value.toLowerCase(),o=el('showOriginal').checked,n=el('showNew').checked;let count=0;document.querySelectorAll('tbody tr').forEach(r=>{let show=(!t||r.dataset.territory===t)&&r.textContent.toLowerCase().includes(q)&&(r.dataset.class==='original'?o:n);r.classList.toggle('hidden',!show);if(show)count++;});document.querySelectorAll('.pin').forEach(r=>{let show=(!t||r.dataset.territory===t)&&r.dataset.search.includes(q)&&(r.classList.contains('original')?o:n);r.classList.toggle('hidden',!show);});document.querySelectorAll('.territory-label').forEach(r=>r.classList.toggle('hidden',!el('showLabels').checked));el('odotInterstates').classList.toggle('hidden',!el('showHighways').checked);el('odotStateRoutes').classList.toggle('hidden',!el('showStateRoutes').checked);el('count').textContent=count+' shown';}document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',filter));filter();</script></body></html>
