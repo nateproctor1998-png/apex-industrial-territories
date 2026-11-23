@@ -1,0 +1,25 @@
+/* Apex sales extensions — dark UI; no changes to original map geometry */
+.apex-upgrade{margin:12px 0;background:#17273a;border:1px solid #36516d;border-radius:11px;color:#eaf2fa}
+.apex-upgrade summary{cursor:pointer;font-weight:750;font-size:15px;padding:14px 18px;color:#eaf2fa}
+.apex-upgrade[open] summary{border-bottom:1px solid #324962}
+.apex-upgrade .upgrade-body{padding:15px 18px}
+.apex-upgrade .upgrade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:11px}
+.apex-upgrade label{display:flex;flex-direction:column;align-items:stretch;gap:5px;font-size:12px;font-weight:650;color:#d5e5f4}
+.apex-upgrade input,.apex-upgrade select,.apex-upgrade textarea{padding:9px;background:#0f1c2b!important;border:1px solid #50667b!important;color:#f0f8ff!important;border-radius:7px}
+.apex-upgrade button,.upg-btn{padding:8px 12px;margin:4px 4px 4px 0;background:#2b4968;color:#eff8ff;border:1px solid #6385a8;border-radius:7px;cursor:pointer}
+.apex-upgrade button:hover,.upg-btn:hover{filter:brightness(1.15)}
+.apex-upgrade button:disabled{opacity:.5;cursor:not-allowed}
+.upg-subtle{color:#b6c9db;font-size:12px;line-height:1.5}
+.upg-warning{color:#ffc783;font-size:12px}
+.upg-list{display:grid;gap:6px;margin:10px 0;max-height:240px;overflow:auto}
+.upg-lead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid #364d66;border-radius:8px;background:#112136}
+.upg-lead div{min-width:0;overflow-wrap:anywhere}
+.upg-lead small{display:block;color:#adbed1}
+.upg-kpi{display:inline-block;font-weight:700;color:#eff7ff;background:#243c56;border-radius:8px;padding:8px 11px;margin:3px}
+.upg-score{display:inline-block;min-width:44px;padding:3px 7px;text-align:center;border-radius:7px;background:#29415a;font-weight:700}
+.upg-score.high{background:#165b42;color:#d4ffdf}.upg-score.medium{background:#675321;color:#ffedbc}
+.upg-field-status{color:#b9cbe0;font-size:12px;margin:8px 0}
+.upg-notice{background:#513923;border:1px solid #916b36;color:#ffdeb1;border-radius:8px;padding:9px;font-size:12px}
+#upgReminders .upg-lead button{white-space:nowrap}
+#dBuildingSqft,#dGeoLat,#dGeoLon{width:100%}
+#scoreExplainer{margin:8px 0 0}
