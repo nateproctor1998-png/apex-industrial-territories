@@ -70,6 +70,40 @@ $('locateOSM').addEventListener('click',()=>{
  window.open('https://www.openstreetmap.org/search?query='+encodeURIComponent(address+', Ohio, USA'),'_blank','noopener,noreferrer');
  extStatus('geoVerification','Use OpenStreetMap to verify the exact building, then enter its coordinates here and check Verified. Search results are not automatically assumed correct.');
 });
+// One address lookup at a time. User must verify any returned location.
+let lastCoordinateLookup=0;
+$('suggestCoordinates').addEventListener('click',async()=>{
+ if(selected===null)return;
+ const out=$('coordinateSuggestions');out.replaceChildren();
+ if(Date.now()-lastCoordinateLookup<2000){extStatus('geoVerification','Please allow at least two seconds between searches.');return}
+ lastCoordinateLookup=Date.now();
+ const button=$('suggestCoordinates'),index=selected;
+ button.disabled=true;
+ extStatus('geoVerification','Searching for possible locations…');
+ try{
+  const params=new URLSearchParams({q:recordFor(index).address+', Ohio, USA',format:'jsonv2',countrycodes:'us',limit:'3'});
+  const response=await fetch('https://nominatim.openstreetmap.org/search?'+params.toString());
+  if(!response.ok)throw Error('Geocoding returned '+response.status);
+  const results=await response.json();
+  if(index!==selected)return;
+  if(!Array.isArray(results)||!results.length){extStatus('geoVerification','No matches found. Use manual map lookup.');return}
+  extStatus('geoVerification','Possible matches from OpenStreetMap contributors. Verify the exact building before saving.');
+  for(const result of results){
+   const lat=Number(result.lat),lon=Number(result.lon);
+   if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat<38||lat>42||lon < -86||lon > -82)continue;
+   const line=document.createElement('div'),name=document.createElement('div'),button=document.createElement('button');
+   line.className='upg-lead';name.textContent=result.display_name||lat+', '+lon;
+   button.type='button';button.textContent='Use suggestion';
+   button.addEventListener('click',()=>{
+    if(selected!==index)return;
+    $('dGeoLat').value=lat.toFixed(7);$('dGeoLon').value=lon.toFixed(7);$('dGeoVerified').checked=false;
+    extStatus('geoVerification','Coordinates proposed but not verified. Check exact facility location, tick Verified, then Save.');
+   });
+   line.append(name,button);out.appendChild(line);
+  }
+ }catch(error){extStatus('geoVerification','Lookup unavailable: '+error.message+'. Use manual OpenStreetMap search.')}
+ finally{button.disabled=false}
+});
 // Route approximate optimization: only confirmed geographic coordinates, actual streets are handled by Google Maps.
 function geodistance(a,b){
  const la=a[0]*Math.PI/180,lb=b[0]*Math.PI/180,dl=(b[0]-a[0])*Math.PI/180,doff=(b[1]-a[1])*Math.PI/180;
