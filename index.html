@@ -12,7 +12,7 @@ function renderRecord(i){let c=allRows[i].cells,r=recordFor(i);[r.company,r.type
 function selectFacility(i){if(i===null||!allRows[i])return;selected=i;allRows.forEach((r,j)=>r.classList.toggle('selected',j===i));const rec=recordFor(i);ids.forEach((id,j)=>el(id).value=rec[fields[j]]||'');el('detailHeading').textContent=rec.company+' — contact details';el('detailPanel').classList.add('open');el('saveStatus').textContent='';el('detailPanel').scrollIntoView({behavior:'smooth',block:'nearest'});}
 allRows.forEach((row,i)=>{renderRecord(i);row.addEventListener('click',()=>selectFacility(i));});
 document.querySelectorAll('circle.pin[data-index]').forEach(pin=>pin.addEventListener('click',()=>selectFacility(Number(pin.dataset.index))));
-el('saveDetail').addEventListener('click',()=>{if(selected===null)return;let rec={};fields.forEach((f,j)=>rec[f]=el(ids[j]).value.trim());overrides[selected]=rec;try{localStorage.setItem(storageKey,JSON.stringify(overrides));renderRecord(selected);el('detailHeading').textContent=rec.company+' — contact details';el('saveStatus').textContent='Saved in this browser.';}catch(e){el('saveStatus').textContent='Unable to save in this browser. Export CSV to keep changes.';}});
+el('saveDetail').addEventListener('click',()=>{if(selected===null)return;let rec={};fields.forEach((f,j)=>rec[f]=el(ids[j]).value.trim());overrides[selected]={...(overrides[selected]||{}),...rec};try{localStorage.setItem(storageKey,JSON.stringify(overrides));renderRecord(selected);el('detailHeading').textContent=rec.company+' — contact details';el('saveStatus').textContent='Saved in this browser.';}catch(e){el('saveStatus').textContent='Unable to save in this browser. Export CSV to keep changes.';}});
 el('closeDetail').addEventListener('click',()=>{el('detailPanel').classList.remove('open');selected=null;allRows.forEach(r=>r.classList.remove('selected'));});
 
 
@@ -125,7 +125,6 @@ el('openDrivingRoute').addEventListener('click',()=>{
  el('routeMessage').textContent='Opened directions for '+destinations.length+' stops. Confirm locations and route order in Google Maps.';
 });
 const exportSales=el('exportContacts');
-const originalExportHandler=exportSales.onclick;
 // Replace the legacy CSV click action with a richer CSV export, preserving the seven existing fields.
 exportSales.replaceWith(exportSales.cloneNode(true));
 el('exportContacts').addEventListener('click',()=>{
