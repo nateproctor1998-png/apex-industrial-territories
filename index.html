@@ -41,6 +41,17 @@ svg .territory:hover{stroke:#e3efff!important;stroke-width:2.8!important;fill-op
 svg g.territory-label .territory-count-bg{fill:#152438!important;fill-opacity:.96!important;stroke:#7291af!important;stroke-width:1.1!important}
 svg g.territory-label .territory-count-text{fill:#f3f8ff!important;stroke:none!important;paint-order:normal!important;letter-spacing:.15px}
 svg g.territory-label:hover .territory-count-bg{fill:#213957!important;stroke:#b6d4ee!important}
+
+/* Minimize and restore map windows */
+.panel-heading-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px}
+.panel-heading-bar h1,.panel-heading-bar h2{margin:0;min-width:0}
+.panel-minimize-btn,.panel-toolbar-btn{flex-shrink:0;border:1px solid #58718c;background:#263e59;color:#eef7ff;border-radius:8px;padding:7px 11px;font-weight:650;cursor:pointer}
+.panel-minimize-btn:hover,.panel-toolbar-btn:hover{background:#335773}
+.panel.minimized > :not(.panel-heading-bar){display:none!important}
+.panel.minimized{padding-bottom:16px}
+.panel-toolbar{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin:0 0 12px}
+.panel-map-title{font-size:18px;font-weight:700;color:#eff7ff}
+@media(max-width:600px){.panel-heading-bar{gap:8px}.panel-minimize-btn{padding:7px 9px}.panel-heading-bar h1{font-size:20px}.panel-heading-bar h2{font-size:17px}}
 </style><link rel="stylesheet" href="sales-extensions.css?v=20261123"></head><body><main class="wrap"><div class="panel"><h1>Apex Floor Coatings | Industrial Territory Map</h1><p>11 counties, 18 territories, 317 recorded facilities. <strong>Darke County includes 11 Greenville candidates; Miami North includes 12 Piqua candidates; Warren North includes new Lebanon prospects. Clinton County includes Wilmington prospects; Clermont contains new industrial sites.</strong> Darke, Clinton, Clermont and Preble are undivided counties. Road corridors are drawn from Ohio Department of Transportation Road Inventory geometry when the map can reach the ODOT service. County boundaries and facility pins remain provisional; these are not turn-by-turn navigation routes. County boundaries use a historical US county shapefile; facility pin locations and territory assignments are provisional. The daily discovery search is separate from this static map and does not automatically update these files.</p><div class="controls"><label><input type="checkbox" id="showOriginal" checked> Opportunities (317)</label><label><input type="checkbox" id="showNew" checked> New Opportunities (0)</label><label><input type="checkbox" id="showLabels" checked> Territory labels</label><label><input type="checkbox" id="showHighways" checked> Interstate highways (ODOT)</label><label><input type="checkbox" id="showStateRoutes" checked> Ohio state routes (ODOT)</label><span id="roadStatus" class="small-note">Loading complete ODOT road-segment IDs…</span><label>Territory <select id="territory"><option value="">All 18</option><option value="Butler North">Butler North</option><option value="Butler South">Butler South</option><option value="Clark North">Clark North</option><option value="Clark South">Clark South</option><option value="Clermont County">Clermont County</option><option value="Clinton County">Clinton County</option><option value="Darke County">Darke County</option><option value="Greene North">Greene North</option><option value="Greene South">Greene South</option><option value="Hamilton East">Hamilton East</option><option value="Hamilton West">Hamilton West</option><option value="Miami North">Miami North</option><option value="Miami South">Miami South</option><option value="Montgomery North">Montgomery North</option><option value="Montgomery South">Montgomery South</option><option value="Preble County">Preble County</option><option value="Warren North">Warren North</option><option value="Warren South">Warren South</option></select></label><label>Find facility <input id="search" placeholder="Facility or address"/></label></div></div><div class="panel"><h2>Sales prospecting tools</h2><div class="sales-controls"><label>Facility type <select id="facilityTypeFilter"><option value="">All facility types</option><option value="Unclassified">Unclassified / not verified</option><option value="Manufacturing">Manufacturing / Fabrication</option><option value="Distribution">Warehouse / Distribution</option><option value="Food">Food / Beverage</option><option value="Aerospace">Aerospace / Automotive</option><option value="Chemical">Chemical / Plating</option><option value="Medical">Medical / Healthcare</option><option value="Other">Other known types</option></select></label><label>Contact status <select id="salesStatusFilter"><option value="">All statuses</option><option value="Not Contacted">Not Contacted</option><option value="Contacted">Contacted</option><option value="Follow-Up">Follow-Up</option><option value="Active Opportunity">Active Opportunity</option><option value="Not Interested">Not Interested</option></select></label><label>Flooring opportunity <select id="flooringFilter"><option value="">All opportunities</option><option value="Epoxy / Resinous">Epoxy / Resinous</option><option value="Polished Concrete">Polished Concrete</option><option value="Densification">Densification</option><option value="Joint Repair">Joint Repair</option><option value="Safety Lines">Safety Lines</option><option value="Concrete Grinding">Concrete Grinding</option></select></label><label>Follow-up <select id="followupFilter"><option value="">All dates</option><option value="due">Due / overdue</option><option value="upcoming">Scheduled upcoming</option></select></label></div><div class="status-legend"><span class="legend-item"><i class="legend-dot" style="background:#64748b"></i>Not Contacted</span><span class="legend-item"><i class="legend-dot" style="background:#2563eb"></i>Contacted</span><span class="legend-item"><i class="legend-dot" style="background:#eab308"></i>Follow-Up</span><span class="legend-item"><i class="legend-dot" style="background:#16a34a"></i>Active Opportunity</span><span class="legend-item"><i class="legend-dot" style="background:#991b1b"></i>Not Interested</span></div><p class="small-note">Pin colors reflect contact status, not verified facility or flooring conditions. Type and opportunity filters show only records that have been classified or tagged.</p><div class="route-panel"><h3>Daily facility visit route planner</h3><p class="small-note">Select up to 8 stops from facility cards or the directory. Stops are visited in the order added (not automatically optimized). Google Maps calculates the actual driving route.</p><label>Starting address <input id="routeOrigin" value="300 Shotwell Dr, Franklin, OH" placeholder="Enter starting address"/></label><ol id="routeStops" class="route-list"><li>No facilities selected yet.</li></ol><button type="button" class="small-btn" id="optimizeRoute">Suggest shortest stop order (approx.)</button> <button type="button" class="small-btn" id="openDrivingRoute">Open driving route in Google Maps</button> <button type="button" class="small-btn" id="clearRoute">Clear stops</button><p id="routeMessage" class="route-meta"></p></div></div><div class="panel"><h2>New territory intelligence</h2><p class="small-note">These panels stay collapsed by default to keep the map uncluttered. Alerts from outside this site must be imported or configured; no outside project claims are invented.</p>
 <details class="apex-upgrade"><summary>Follow-up reminders <span id="upgDueCount" class="upg-kpi">Checking…</span></summary><div class="upgrade-body">
 <p class="upg-subtle">See follow-ups due today or overdue. Browser notifications are available only while this page is open.</p>
@@ -352,4 +363,47 @@ function filter(){
  el('odotStateRoutes').classList.toggle('hidden',!el('showStateRoutes').checked);
  el('count').textContent=count+' shown';
 }
-document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',filter));filter();</script><script src="sales-extensions.js?v=20261123"></script></body></html>
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',filter));filter();</script><script src="sales-extensions.js?v=20261123"></script><script>
+/* Panel minimizing works on existing HTML without rebuilding any facility data. */
+(function(){
+ const panels=[...document.querySelectorAll('main.wrap > .panel')];
+ const labels=['Map settings','Sales prospecting tools','Territory intelligence','Territory map','Facility directory'];
+ const keys=['settings','sales','intelligence','map','directory'];
+ const storeKey='apex-territory-panels-v1';
+ let saved={};
+ try{saved=JSON.parse(localStorage.getItem(storeKey)||'{}')||{}}catch(e){}
+ function setPanel(i,minimized){
+  const panel=panels[i],btn=panel.querySelector('.panel-minimize-btn');
+  if(!panel||!btn)return;
+  panel.classList.toggle('minimized',minimized);
+  btn.textContent=minimized?'＋ Expand':'− Minimize';
+  btn.setAttribute('aria-expanded',String(!minimized));
+  btn.setAttribute('aria-label',(minimized?'Expand ':'Minimize ')+labels[i]);
+  try{localStorage.setItem(storeKey,JSON.stringify(Object.fromEntries(keys.map((k,j)=>[k,panels[j].classList.contains('minimized')]))))}catch(e){}
+ }
+ panels.forEach((panel,i)=>{
+  const firstHeading=panel.querySelector(':scope > h1, :scope > h2');
+  const bar=document.createElement('div');bar.className='panel-heading-bar';
+  if(firstHeading)bar.appendChild(firstHeading);
+  else{
+   const heading=document.createElement('h2');
+   heading.className='panel-map-title';heading.textContent=labels[i];bar.appendChild(heading);
+  }
+  const button=document.createElement('button');button.type='button';button.className='panel-minimize-btn';
+  button.addEventListener('click',()=>setPanel(i,!panel.classList.contains('minimized')));
+  bar.appendChild(button);panel.prepend(bar);
+  setPanel(i,!!saved[keys[i]]);
+ });
+ const toolbar=document.createElement('div');toolbar.className='panel-toolbar';
+ const minimize=document.createElement('button');minimize.type='button';minimize.className='panel-toolbar-btn';minimize.textContent='Minimize all';
+ minimize.addEventListener('click',()=>panels.forEach((_,i)=>setPanel(i,true)));
+ const restore=document.createElement('button');restore.type='button';restore.className='panel-toolbar-btn';restore.textContent='Expand all';
+ restore.addEventListener('click',()=>panels.forEach((_,i)=>setPanel(i,false)));
+ toolbar.append(minimize,restore);document.querySelector('main.wrap').prepend(toolbar);
+ // Opening a facility from a map pin or activity reminder must expose its detail editor.
+ if(typeof selectFacility==='function'){
+  const original=selectFacility;
+  selectFacility=function(i){setPanel(4,false);original(i)};
+ }
+})();
+</script></body></html>
