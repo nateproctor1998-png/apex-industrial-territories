@@ -296,3 +296,5 @@ refreshSalesRow=function(i){existingRefresh(i);refreshExtensionRow(i)};
 refreshExtension();
 if(conf.url&&conf.anon)cloudInit().catch(e=>cloudState('Connection inactive: '+e.message));
 })();
+
+;(()=>{for(const i of [287,288,294,295]){const row=allRows[i];if(row){row.dataset.removed='true';row.style.setProperty('display','none','important')}const pin=facilityPins[i];if(pin)pin.style.setProperty('display','none','important')}filter()})();
