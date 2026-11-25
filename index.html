@@ -520,7 +520,7 @@ for(const f of counties){
 }
  if(![...select.options].some(o=>o.value===name))select.add(new Option(name,name));
  const p=layer.append('path').attr('class','territory').attr('data-territory',name).attr('d',path(f)).attr('fill',colors[st]).attr('tabindex',0).attr('role','button');
- p.style('stroke','none','important');p.attr('fill',d3.schemeTableau10[Number(f.id)%10]);p.append('title').text(name+' — within 60 miles');
+ p.style('stroke','none','important');p.attr('fill',String(f.id)==='39047'?'#a8cf48':d3.schemeTableau10[Number(f.id)%10]);p.append('title').text(name+' — within 60 miles');
  const c=clipped.invert(clipPath.centroid(f));if(c){const xy=[(c[0]+85)*600+83,27710-683*c[1]];layer.append('text').attr('x',xy[0]).attr('y',xy[1]).attr('class','territory-label').attr('text-anchor','middle').attr('font-size',11).attr('pointer-events','none').text(f.properties.name+' '+states[st]);}
  newShapes.set(name,p.node());p.on('click',()=>{select.value=name;select.dispatchEvent(new Event('input'));select.dispatchEvent(new Event('change'));}).on('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.dispatch('click')}});
 }
