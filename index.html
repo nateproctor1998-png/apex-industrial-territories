@@ -343,7 +343,7 @@ for(const coords of lines){
  if(labels.get(n).length<90){const mid=projectedPoint(coords[Math.floor(coords.length/2)]);if(mid[0]>190&&mid[0]<975&&mid[1]>260&&mid[1]<1060)labels.get(n).push(mid);}
 }
 }
-target.replaceChildren(frag);
+const expanded=[...target.querySelectorAll(':scope > g[data-expanded-network]')];target.replaceChildren(frag,...expanded);
 for(const [n,positions] of labels){if(!positions.length)continue;const p=positions[Math.floor(positions.length/2)];const name=(kind==='IR'?'I-':'SR ')+n;
 const group=svgNode('g',{class:'odot-shield'+(kind==='IR'?' interstate':''),transform:'translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+')'});
 group.appendChild(svgNode('rect',{x:-24,y:-10,width:48,height:20,rx:5}));
@@ -571,17 +571,25 @@ const coverage=topojson.merge(us,us.objects.counties.geometries.filter(g=>active
 defs.append('clipPath').attr('id','apex-active-counties').append('path').attr('d',path(coverage));
 const bounds=d3.geoBounds(circle),bbox=[bounds[0][1],bounds[0][0],bounds[1][1],bounds[1][0]].join(',');
 async function expandedNetwork(){
- const query='[out:json][timeout:90];(way["highway"]["ref"~"(^|; *)(I |US |SR |KY |IN |OH )[0-9]"]('+bbox+');way["waterway"="river"]('+bbox+');way["natural"="water"]["water"~"lake|reservoir|river"]('+bbox+'););out geom;';
- let data,last;
- for(const endpoint of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
-  try{const response=await fetch(endpoint+'?'+new URLSearchParams({data:query}));if(!response.ok)throw Error('HTTP '+response.status);data=await response.json();if(!Array.isArray(data.elements)||data.remark)throw Error(data.remark||'Incomplete response');break}catch(e){last=e;data=null}
+ const roadQuery='way["highway"~"^(motorway|trunk|primary|secondary|tertiary)$"]["ref"]';
+ const queries=[roadQuery,'way["waterway"="river"]','way["natural"="water"]["water"~"lake|reservoir|river"]'];
+ const tiles=[];for(let y=bounds[0][1];y<bounds[1][1];y+=0.5)for(let x=bounds[0][0];x<bounds[1][0];x+=0.5)tiles.push([y,x,Math.min(y+.5,bounds[1][1]),Math.min(x+.5,bounds[1][0])].join(','));
+ const elements=new Map();let failed=0;
+ async function tileRequest(tile,selector){
+ const query='[out:json][timeout:45];'+selector+'('+tile+');out geom;';
+ for(const endpoint of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.private.coffee/api/interpreter']){
+ try{const response=await fetch(endpoint+'?'+new URLSearchParams({data:query}),{signal:AbortSignal.timeout(55000)});if(!response.ok)throw Error('HTTP '+response.status);const result=await response.json();if(!Array.isArray(result.elements)||result.remark)throw Error('Incomplete response');for(const w of result.elements)elements.set(w.id,w);return}catch(e){}
+ }failed++;
  }
- if(!data)throw last||Error('Network unavailable');
+ for(let i=0;i<tiles.length;i+=3)await Promise.all(tiles.slice(i,i+3).map(t=>tileRequest(t,roadQuery)));
+ const data={elements:[...elements.values()]};
+ if(!data.elements.length)throw Error('No expanded road geometry returned');
  const groups={IR:document.getElementById('odotInterstates'),SR:document.getElementById('odotStateRoutes'),water:document.getElementById('majorWaterways')};
- const layers={};for(const [key,target] of Object.entries(groups)){const g=svgNode('g',{'clip-path':'url(#apex-radius-clip)'}),inner=svgNode('g',{'clip-path':'url(#apex-active-counties)'});g.appendChild(inner);layers[key]={g,inner,target};}
+ const layers={};for(const [key,target] of Object.entries(groups)){const g=svgNode('g',{'data-expanded-network':'true','clip-path':'url(#apex-radius-clip)'}),inner=svgNode('g',{'clip-path':'url(#apex-active-counties)'});g.appendChild(inner);layers[key]={g,inner,target};}
  const counts={IR:0,SR:0,water:0},labels=new Map();
  for(const way of data.elements){const t=way.tags||{},coords=(way.geometry||[]).map(p=>[p.lon,p.lat]);if(coords.length<2)continue;
- const key=t.highway?(/(^|; *)I [0-9]/.test(t.ref||'')?'IR':'SR'):'water';
+ if(t.highway&&!/(^|;\\s*)(I|US|SR|KY|IN|OH|State Road|State Route)[ -]*[0-9]/i.test(t.ref||''))continue;
+ const key=t.highway?(/(^|;\\s*)I[ -]*[0-9]/i.test(t.ref||'')?'IR':'SR'):'water';
  const d=odotPath(coords);if(!d)continue;
  const area=key==='water'&&t.natural==='water'&&coords[0].join(',')===coords[coords.length-1].join(',');
  const node=svgNode('path',{d:d+(area?'Z':''),fill:area?'#4388b5':'none',stroke:key==='water'?'#4388b5':key==='IR'?'#e9b45a':'#c4b6a0','stroke-width':key==='IR'?2.8:key==='SR'?1.3:2,'stroke-linejoin':'round','stroke-linecap':'round'});
@@ -590,6 +598,9 @@ async function expandedNetwork(){
  }
  for(const {key,name,mid} of labels.values()){const p=projectedPoint(mid),t=svgNode('text',{x:p[0],y:p[1],'font-size':key==='IR'?12:9,'text-anchor':'middle',fill:key==='water'?'#8bc9ed':'#f5e6c8',stroke:'#243547','stroke-width':2,'paint-order':'stroke','pointer-events':'none'});t.textContent=name;layers[key].inner.appendChild(t);}
  for(const {g,target} of Object.values(layers))target.appendChild(g);
+ if(failed)document.getElementById('roadStatus').textContent+=' | '+failed+' road tiles unavailable.';
+ for(let i=0;i<tiles.length;i+=3)await Promise.all(tiles.slice(i,i+3).map(t=>tileRequest(t,queries[1])));
+ for(const w of elements.values()){if(w.tags?.waterway!=='river')continue;const d=odotPath((w.geometry||[]).map(p=>[p.lon,p.lat]));if(d){layers.water.inner.appendChild(svgNode('path',{d,fill:'none',stroke:'#4388b5','stroke-width':2}));counts.water++;}}
  document.getElementById('roadStatus').textContent+=' | Expanded OH/IN/KY roads: '+counts.IR+' interstate and '+counts.SR+' numbered route ways (OpenStreetMap).';
  document.getElementById('waterStatus').textContent+=' | Expanded waterways: '+counts.water+' mapped ways (OpenStreetMap).';
 }
