@@ -475,7 +475,7 @@ const clipPath=d3.geoPath(clipped);
 const project=d3.geoTransform({point(lon,lat){this.stream.point((lon+85)*600+83,27710-683*lat);}});
 const path=d3.geoPath(project),circle=d3.geoCircle().center(center).radius(angular).precision(.2)();
 const excludedCountyNames=new Set(['Pickaway','Ross','Pike','Adams','Mason','Decatur','Rush','Henry','Union','Mercer','Auglaize','Franklin']);
-const counties=topojson.feature(us,us.objects.counties).features.filter(f=>(!excludedCountyNames.has(f.properties.name)||String(f.id)==='18047')&&['39','18','21'].includes(String(f.id).slice(0,2))&&clipPath.area(f)>.1);
+const counties=topojson.feature(us,us.objects.counties).features.filter(f=>(!excludedCountyNames.has(f.properties.name)||String(f.id)==='18047'||String(f.id)==='18161')&&['39','18','21'].includes(String(f.id).slice(0,2))&&clipPath.area(f)>.1);
 const activeCountyIds=new Set(counties.map(f=>String(f.id)));
 const states={'39':'OH','18':'IN','21':'KY'},colors={'39':'#376b91','18':'#507e64','21':'#8b6847'};
 const existing=new Set([...select.options].map(o=>o.value.replace(/ (North|South|East|West|County)$/,'')));
