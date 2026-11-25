@@ -481,17 +481,34 @@ const root=d3.select(svg),defs=root.select('defs');
 defs.append('clipPath').attr('id','apex-radius-clip').append('path').attr('d',path(circle));
 const firstShape=svg.querySelector('path.territory');let anchor=firstShape;while(anchor.parentNode!==svg)anchor=anchor.parentNode;
 const layer=root.insert('g',()=>anchor).attr('id','radiusCountyLayer').attr('clip-path','url(#apex-radius-clip)');
+/* Use the same county topology for fills and boundaries, including legacy counties.
+ Preserve legacy split shapes as interactive overlays, clipped to their matching county. */
+const legacyPaths=[...svg.querySelectorAll('path.territory[data-territory]')];
+for(const p of legacyPaths){
+ const county=p.dataset.territory.replace(/ (North|South|East|West|County)$/,'');
+ const f=counties.find(f=>String(f.id).startsWith('39')&&f.properties.name===county);
+ if(!f)continue;
+ const id='apex-county-'+f.id;
+ if(!document.getElementById(id))defs.append('clipPath').attr('id',id).append('path').attr('d',path(f));
+ // Keep existing Hamilton half clips and other split geometry intact by nesting.
+ const wrapper=document.createElementNS('http://www.w3.org/2000/svg','g');
+ wrapper.setAttribute('clip-path','url(#'+id+')');p.parentNode.insertBefore(wrapper,p);wrapper.appendChild(p);
+ p.style.setProperty('stroke','none','important');
+}
 const newShapes=new Map();
 for(const f of counties){
  const st=String(f.id).slice(0,2),name=f.properties.name+' County, '+states[st];
- if(st==='39'&&existing.has(f.properties.name))continue;
+ if(st==='39'&&existing.has(f.properties.name)){layer.append('path').attr('d',path(f)).attr('fill','#376b91').attr('stroke','none');continue;}
  if(![...select.options].some(o=>o.value===name))select.add(new Option(name,name));
  const p=layer.append('path').attr('class','territory').attr('data-territory',name).attr('d',path(f)).attr('fill',colors[st]).attr('tabindex',0).attr('role','button');
- p.append('title').text(name+' — within 60 miles');
+ p.style('stroke','none','important');p.append('title').text(name+' — within 60 miles');
  const c=clipped.invert(clipPath.centroid(f));if(c){const xy=[(c[0]+85)*600+83,27710-683*c[1]];layer.append('text').attr('x',xy[0]).attr('y',xy[1]).attr('class','territory-label').attr('text-anchor','middle').attr('font-size',11).attr('pointer-events','none').text(f.properties.name+' '+states[st]);}
  newShapes.set(name,p.node());p.on('click',()=>{select.value=name;select.dispatchEvent(new Event('input'));select.dispatchEvent(new Event('change'));}).on('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.dispatch('click')}});
 }
 const overlay=root.append('g').attr('pointer-events','none');
+const boundaryLayer=overlay.append('g').attr('clip-path','url(#apex-radius-clip)');
+boundaryLayer.append('path').attr('d',path(topojson.mesh(us,us.objects.counties,(a,b)=>a!==b&&String(a.id).slice(0,2)===String(b.id).slice(0,2)))).attr('fill','none').attr('stroke','#8da5bb').attr('stroke-width',1.2);
+
 overlay.append('path').attr('d',path(topojson.mesh(us,us.objects.states,(a,b)=>a!==b))).attr('clip-path','url(#apex-radius-clip)').attr('fill','none').attr('stroke','#e7eef7').attr('stroke-width',2.5);
 overlay.append('path').attr('d',path(circle)).attr('fill','none').attr('stroke','#fbbf24').attr('stroke-width',2.5);
 const b=path.bounds(circle),home=[Math.min(0,b[0][0]-25),Math.min(0,b[0][1]-25),0,0];home[2]=Math.max(1080,b[1][0]+25)-home[0];home[3]=Math.max(1250,b[1][1]+25)-home[1];
