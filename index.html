@@ -482,6 +482,18 @@ const select=section.querySelector('select'),mainSelect=document.getElementById(
 const existing=new Set([...mainSelect.options].map(o=>o.value.replace(/ (North|South|East|West|County)$/,'')));
 counties.sort((a,b)=>String(a.id).slice(0,2).localeCompare(String(b.id).slice(0,2))||a.properties.name.localeCompare(b.properties.name));
 const label=f=>f.properties.name+' County, '+states[String(f.id).slice(0,2)];
+const champaign=counties.find(f=>String(f.id)==='39021');
+if(champaign){
+ const g=d3.select(original).insert('g','defs + rect + text').attr('id','champaignTerritory');
+ const mainProjection=d3.geoTransform({point(lon,lat){this.stream.point((lon+85)*600+83,27710-683*lat);}});
+ const inverseClip=d3.geoCircle().center(center).radius(angular).precision(.25)();
+ const defs=d3.select(original).select('defs');
+ defs.append('clipPath').attr('id','champaign-radius-clip').append('path').attr('d',d3.geoPath(mainProjection)(inverseClip));
+ g.attr('clip-path','url(#champaign-radius-clip)');
+ g.append('path').attr('d',d3.geoPath(mainProjection)(champaign)).attr('fill','#376b91').attr('stroke','#b1c9dc').attr('stroke-width',1.5).style('cursor','pointer').on('click',()=>{mainSelect.value='Champaign County, OH';mainSelect.dispatchEvent(new Event('input'));select.value=champaign.id;select.dispatchEvent(new Event('change'));});
+ const p=projection.invert(path.centroid(champaign));if(p)g.append('text').attr('x',(p[0]+85)*600+83).attr('y',27710-683*p[1]).attr('text-anchor','middle').attr('fill','#fff').attr('font-size',12).attr('pointer-events','none').text('Champaign');
+}
+
 for(const f of counties){select.add(new Option(label(f),f.id));if(!(String(f.id).startsWith('39')&&existing.has(f.properties.name))&&!Array.from(mainSelect.options).some(o=>o.value===label(f)))mainSelect.add(new Option(label(f),label(f)));}
 section.querySelector('select').addEventListener('change',()=>{layer.attr('opacity',f=>!select.value||String(f.id)===select.value?1:.25);});
 const layer=svg.append('g').selectAll('path').data(counties).join('path').attr('d',path).attr('fill',f=>colors[String(f.id).slice(0,2)]).attr('stroke','#b1c9dc').attr('stroke-width',.8).style('cursor','pointer').on('click',(e,f)=>{select.value=f.id;select.dispatchEvent(new Event('change'));});layer.append('title').text(label);
