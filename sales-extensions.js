@@ -23,7 +23,7 @@ function scoreFacility(i){
 function refreshExtensionRow(i){
  const row=records[i],o=scoreFacility(i);
  const cell=row.querySelector('.upg-score');
- if(cell){cell.textContent=o.data?String(o.score):'—';cell.title='Sales-priority estimate; not a verified floor condition or dollar estimate';cell.className='upg-score'+(o.score>=70?' high':o.score>=40?' medium':'');}
+ if(cell){cell.textContent=recordFor(i).manualPriority||(o.data?String(o.score):'—');cell.title=recordFor(i).manualPriority?'User-assigned priority; calculated score: '+o.score:'Sales-priority estimate; not a verified floor condition or dollar estimate';cell.className='upg-score'+(o.score>=70?' high':o.score>=40?' medium':'');}
  const r=recordFor(i),pin=facilityPins[i];
  if(pin&&r.locationVerified&&Number.isFinite(Number(r.latitude))&&Number.isFinite(Number(r.longitude))){
   const p=projectedPoint([Number(r.longitude),Number(r.latitude)]);
