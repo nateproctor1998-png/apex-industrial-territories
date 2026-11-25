@@ -523,7 +523,7 @@ if(counties.some(f=>kyIds.has(String(f.id)))){
  newShapes.set(kyName,p.node());
  p.on('click',()=>{select.value=kyName;select.dispatchEvent(new Event('input'));select.dispatchEvent(new Event('change'));}).on('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.dispatch('click')}});
 }
-const riverName='Boone, Ohio & Switzerland Counties',riverIds=new Set(['21015','18115','18155']);
+const riverName='Gallatin, Ohio & Switzerland Counties',riverIds=new Set(['21077','18115','18155']);
 if(counties.some(f=>riverIds.has(String(f.id)))){
  const merged=topojson.merge(us,us.objects.counties.geometries.filter(g=>riverIds.has(String(g.id))));
  select.add(new Option(riverName,riverName));
