@@ -493,12 +493,16 @@ for(const p of legacyPaths){
  // Keep existing Hamilton half clips and other split geometry intact by nesting.
  const wrapper=document.createElementNS('http://www.w3.org/2000/svg','g');
  wrapper.setAttribute('clip-path','url(#'+id+')');p.parentNode.insertBefore(wrapper,p);wrapper.appendChild(p);
- p.style.setProperty('stroke','none','important');
+ p.style.setProperty('stroke','none','important');p.style.setProperty('fill-opacity','0','important');
 }
 const newShapes=new Map();
 for(const f of counties){
  const st=String(f.id).slice(0,2),name=f.properties.name+' County, '+states[st];
- if(st==='39'&&existing.has(f.properties.name))continue;
+ if(st==='39'&&existing.has(f.properties.name)){
+ const originalColor=legacyPaths.find(p=>p.dataset.territory.replace(/ (North|South|East|West|County)$/,'')===f.properties.name)?.getAttribute('fill')||'#7890a0';
+ layer.append('path').attr('d',path(f)).attr('fill',originalColor).attr('fill-opacity',.45).attr('stroke','none').attr('pointer-events','none');
+ continue;
+}
  if(![...select.options].some(o=>o.value===name))select.add(new Option(name,name));
  const p=layer.append('path').attr('class','territory').attr('data-territory',name).attr('d',path(f)).attr('fill',colors[st]).attr('tabindex',0).attr('role','button');
  p.style('stroke','none','important');p.attr('fill',d3.schemeTableau10[Number(f.id)%10]);p.append('title').text(name+' — within 60 miles');
