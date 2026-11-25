@@ -534,8 +534,19 @@ if(counties.some(f=>riverIds.has(String(f.id)))){
  newShapes.set(riverName,p.node());
  p.on('click',()=>{select.value=riverName;select.dispatchEvent(new Event('input'));select.dispatchEvent(new Event('change'));}).on('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.dispatch('click')}});
 }
+const grantName='Grant & Pendleton Counties',grantIds=new Set(['21081','21191']);
+if(counties.some(f=>grantIds.has(String(f.id)))){
+ const merged=topojson.merge(us,us.objects.counties.geometries.filter(g=>grantIds.has(String(g.id))));
+ select.add(new Option(grantName,grantName));
+ const p=layer.append('path').attr('class','territory').attr('data-territory',grantName).attr('d',path(merged)).attr('fill','#78a85b').attr('tabindex',0).attr('role','button').style('stroke','none','important');
+ p.append('title').text(grantName+' — within 60 miles');
+ const c=clipped.invert(clipPath.centroid(merged));
+ if(c)layer.append('text').attr('x',(c[0]+85)*600+83).attr('y',27710-683*c[1]).attr('class','territory-label').attr('text-anchor','middle').attr('font-size',11).attr('pointer-events','none').text(grantName);
+ newShapes.set(grantName,p.node());
+ p.on('click',()=>{select.value=grantName;select.dispatchEvent(new Event('input'));select.dispatchEvent(new Event('change'));}).on('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.dispatch('click')}});
+}
 for(const f of counties){
- if(combinedIds.has(String(f.id))||kyIds.has(String(f.id))||riverIds.has(String(f.id)))continue;
+ if(combinedIds.has(String(f.id))||kyIds.has(String(f.id))||riverIds.has(String(f.id))||grantIds.has(String(f.id)))continue;
  const st=String(f.id).slice(0,2),name=f.properties.name+' County, '+states[st];
  if(st==='39'&&existing.has(f.properties.name)){
  const originalColor=legacyPaths.find(p=>p.dataset.territory.replace(/ (North|South|East|West|County)$/,'')===f.properties.name)?.getAttribute('fill')||'#7890a0';
@@ -550,7 +561,7 @@ for(const f of counties){
 }
 const overlay=root.append('g').attr('pointer-events','none');
 const boundaryLayer=overlay.append('g').attr('clip-path','url(#apex-radius-clip)');
-boundaryLayer.append('path').attr('d',path(topojson.mesh(us,us.objects.counties,(a,b)=>a!==b&&(activeCountyIds.has(String(a.id))||activeCountyIds.has(String(b.id)))&&String(a.id).slice(0,2)===String(b.id).slice(0,2)&&!(combinedIds.has(String(a.id))&&combinedIds.has(String(b.id)))&&!(kyIds.has(String(a.id))&&kyIds.has(String(b.id)))&&!(riverIds.has(String(a.id))&&riverIds.has(String(b.id)))))).attr('fill','none').attr('stroke','#8da5bb').attr('stroke-width',1.2);
+boundaryLayer.append('path').attr('d',path(topojson.mesh(us,us.objects.counties,(a,b)=>a!==b&&(activeCountyIds.has(String(a.id))||activeCountyIds.has(String(b.id)))&&String(a.id).slice(0,2)===String(b.id).slice(0,2)&&!(combinedIds.has(String(a.id))&&combinedIds.has(String(b.id)))&&!(kyIds.has(String(a.id))&&kyIds.has(String(b.id)))&&!(riverIds.has(String(a.id))&&riverIds.has(String(b.id)))&&!(grantIds.has(String(a.id))&&grantIds.has(String(b.id)))))).attr('fill','none').attr('stroke','#8da5bb').attr('stroke-width',1.2);
 
 overlay.append('path').attr('d',path(topojson.mesh(us,us.objects.states,(a,b)=>a!==b))).attr('clip-path','url(#apex-radius-clip)').attr('fill','none').attr('stroke','#e7eef7').attr('stroke-width',2.5);
 overlay.append('path').attr('d',path(circle)).attr('fill','none').attr('stroke','#fbbf24').attr('stroke-width',2.5);
