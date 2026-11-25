@@ -502,7 +502,7 @@ const combinedParts=counties.filter(f=>combinedIds.has(String(f.id)));
 if(combinedParts.length){
  const merged=topojson.merge(us,us.objects.counties.geometries.filter(g=>combinedIds.has(String(g.id))));
  select.add(new Option(combinedName,combinedName));
- const p=layer.append('path').attr('class','territory').attr('data-territory',combinedName).attr('d',path(merged)).attr('fill','#b58b58').attr('tabindex',0).attr('role','button').style('stroke','none','important');
+ const p=layer.append('path').attr('class','territory').attr('data-territory',combinedName).attr('d',path(merged)).attr('fill','#36c9c6').attr('tabindex',0).attr('role','button').style('stroke','none','important');
  p.append('title').text(combinedName+' — within 60 miles');
  const c=clipped.invert(clipPath.centroid(merged));
  if(c){layer.append('text').attr('x',(c[0]+85)*600+83).attr('y',27710-683*c[1]).attr('class','territory-label').attr('text-anchor','middle').attr('font-size',11).attr('pointer-events','none').text(combinedName);}
