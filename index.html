@@ -526,7 +526,7 @@ for(const f of counties){
 }
 const overlay=root.append('g').attr('pointer-events','none');
 const boundaryLayer=overlay.append('g').attr('clip-path','url(#apex-radius-clip)');
-boundaryLayer.append('path').attr('d',path(topojson.mesh(us,us.objects.counties,(a,b)=>a!==b&&String(a.id).slice(0,2)===String(b.id).slice(0,2)))).attr('fill','none').attr('stroke','#8da5bb').attr('stroke-width',1.2);
+boundaryLayer.append('path').attr('d',path(topojson.mesh(us,us.objects.counties,(a,b)=>a!==b&&String(a.id).slice(0,2)===String(b.id).slice(0,2)&&!(combinedIds.has(String(a.id))&&combinedIds.has(String(b.id)))))).attr('fill','none').attr('stroke','#8da5bb').attr('stroke-width',1.2);
 
 overlay.append('path').attr('d',path(topojson.mesh(us,us.objects.states,(a,b)=>a!==b))).attr('clip-path','url(#apex-radius-clip)').attr('fill','none').attr('stroke','#e7eef7').attr('stroke-width',2.5);
 overlay.append('path').attr('d',path(circle)).attr('fill','none').attr('stroke','#fbbf24').attr('stroke-width',2.5);
